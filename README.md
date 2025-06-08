@@ -1,31 +1,33 @@
 # Conditional Face Synthesis with Embedding-Conditioned Generative Models
 
-This repository provides a modular pipeline for conditional face synthesis using PyTorch. The system generates 128x128 face images conditioned on embeddings from a FaceNet encoder, supporting both fixed and fine-tuned encoder workflows. The codebase is designed for clarity, reproducibility, and ease of extension for research or production use.
+![Pipeline arc](https://github.com/user-attachments/assets/e5d0a5fa-9cf1-40ff-a692-faf24aae579c)
 
----
+This repository provides code conditional face synthesis. The system generates 128x128 face images conditioned on embeddings from a FaceNet encoder, supporting both fixed and fine-tuned encoder workflows. The codebase is designed for clarity, reproducibility, and ease of extension for research or production use.
 
 ---
 
 ## Project Structure
 
-```
+
+```bash
 configs/         # Configuration management
   config.py
-models/          # Model architectures (generator, discriminator, facenet)
+models/          # Generator, discriminator, and encoder architectures
   generator.py
   discriminator.py
   facenet.py
-data/            # Dataset utilities
+data/            # Dataset loading and transformation utilities
   dataset.py
-utils/           # Losses, metrics, and other utilities
+utils/           # Loss functions, metrics, and helpers
   losses.py
   metrics.py
-notebooks/       # Example notebooks for training and inference
-train.py         # Training script
+notebooks/       # Training and inference Colab notebooks
+train.py         # Training pipeline
 inference.py     # Inference script
-main.py          # CLI entrypoint
+main.py          # CLI entry point
 requirements.txt # Python dependencies
 ```
+
 
 ---
 
@@ -36,7 +38,7 @@ This project addresses the challenge of generating realistic face images conditi
 
 - **Face Cropping (Task 1):**
   - Used a Rust/YOLO pipeline to scrape and crop face images from raw data.
-  - Resulted in a dataset of **12,000 cropped face images** (128x128), balancing dataset size and diversity as required by the assignment.
+  - Resulted in a dataset of **12,000 cropped face images** (128x128), balancing dataset size and diversity as required, Used the same for training.
 
 - **Conditional Generation (Task 2):**
   - Trained a conditional generative model to map 512-dim face embeddings to images.
@@ -45,7 +47,41 @@ This project addresses the challenge of generating realistic face images conditi
 
 ---
 
+## Codebase, Dataset, and Model Artifacts
+
+| Category         | Description                                          | Link                                                                 |
+|------------------|------------------------------------------------------|----------------------------------------------------------------------|
+| GitHub Repo      | Full training and inference codebase                | [GitHub Repository](https://github.com/Mayankpratapsingh022/Conditional_Face_Synthesis_with_Embedding_Conditioned_Generative_Model) |
+| Dataset          | Cropped faces (128x128) for training                | [Hugging Face Dataset](https://huggingface.co/datasets/Mayank022/Cropped_Face_Dataset_128x128) |
+| Trained Model    | Final GAN model with FaceNet encoder                | [Hugging Face Model](https://huggingface.co/Mayank022/facegen-facenet-unet-gan-embedding) |
+| Training Notebook| End-to-end model training pipeline in Colab         | [Colab Notebook](https://colab.research.google.com/drive/16vafB_pVNk_QJpquXwxMJXNme3BCGFqS?usp=sharing) |
+| Inference Notebook| Generate images from embeddings                    | [Colab Notebook](https://colab.research.google.com/drive/1Y1s7fmyVfT2jnEL9l23jmkhISNYastds?usp=sharing) |
+
+---
+
+## Experimental Summary
+
+Find detailed metrics, loss trends, and inference samples in the full Weights & Biases report:
+
+> [Weights & Biases Report – Training, Metrics, and Sample Outputs](https://api.wandb.ai/links/mayankpratapsingh0022-other/x8zkffzn)
+
+> [Weights & Biases Dashboard](https://wandb.ai/mayankpratapsingh0022-other/conditional-gan-facenet-exp-2/runs/e4895su5?nw=nwusermayankpratapsingh0022)
+
+### Key Experiments:
+- Explored both GAN and diffusion-based generative strategies.
+- Tested multiple embedding models (ArcFace, FaceNet).
+- Settled on a UNet-style GAN with self-attention, projection-based discriminator, and FaceNet encoder.
+
+---
+
 ## Observations & Limitations
+
+![Output ](https://github.com/user-attachments/assets/c702b93c-91e0-42f8-ad19-98e5dc379f0b)
+
+The model was developed under a constrained timeline, with the original task suggesting a 1-day implementation. In practice, it took approximately 1.5–2 days, during which multiple architectural variations and hyperparameter combinations were tested. Early-stage experimentation included diffusion-based approaches and different embedding models (ArcFace and FaceNet). After evaluating both performance and training stability, a UNet-style GAN conditioned on FaceNet embeddings was selected as the final architecture.
+
+Despite using a relatively small dataset (~12,000 images) and a 6-hour training cap on a single A100 GPU (Refer Colab Notebook), the model showed promising results in structure and identity retention. However, perceptual quality remains limited in some areas (e.g., eye generation), which can be addressed with larger datasets and architectural enhancements.
+
 
 - **Image Quality:**
   - The generated faces show basic structure and identity traits, but perceptual quality is limited.
@@ -94,6 +130,32 @@ After initial runs and qualitative evaluation, **FaceNet + UNet-style GAN** was 
 
 ---
 
+## Training Configuration Summary [Same included in W&B Report]
+
+| Category            | Parameter                           | Value                                   |
+|---------------------|-------------------------------------|-----------------------------------------|
+| Hardware            | GPU                                 | NVIDIA A100                             |
+| Training Time       | Duration                            | ~6 hours                                |
+| Image               | Resolution                          | 128×128                                 |
+|                     | Channels                            | 3 (RGB)                                  |
+| Embedding           | Dimension                           | 512 (FaceNet)                            |
+| Noise Vector        | Dimension                           | 128                                      |
+| Model Depth         | Base Channel Size                   | 128                                      |
+| Training            | Batch Size                          | 64                                       |
+|                     | Epochs                              | 300                                      |
+|                     | Learning Rate (Generator)           | 2e-4                                     |
+|                     | Learning Rate (Discriminator)       | 1e-4                                     |
+|                     | Learning Rate (FaceNet Fine-tune)   | 1e-5                                     |
+|                     | Weight Decay                        | 0.0                                      |
+| Loss Weights        | Embedding Loss (λ_emb)              | 1.0                                      |
+|                     | Perceptual Loss (λ_LPIPS)           | 0.8                                      |
+|                     | R1 Gradient Penalty (γ)             | 10.0                                     |
+| Model Settings      | FaceNet Fine-tuning                 | Enabled                                  |
+|                     | Device                              | CUDA (if available)                      |
+
+---
+
+
 ## Results & Future Work
 
 - **Current Results:**
@@ -118,27 +180,6 @@ After initial runs and qualitative evaluation, **FaceNet + UNet-style GAN** was 
 - **Zero-Shot Generalization:** The model is evaluated on its ability to generate high-quality faces from unseen embeddings.
 - **Experiment Tracking:** All training runs, metrics, and sample generations are logged to Weights & Biases (W&B).
 - **Model Sharing:** Trained model checkpoints are uploaded to the Hugging Face Hub for public access and future inference.
-
----
-
-## Architecture
-
-- **Encoder:** [FaceNet (InceptionResnetV1)](https://github.com/timesler/facenet-pytorch) (pre-trained on VGGFace2, optionally fine-tuned)
-- **Generator:** UNet-style GAN with skip connections and self-attention
-- **Discriminator:** Projection-based conditional discriminator (inspired by BigGAN)
-- **Losses:** Adversarial (BCE), embedding (MSE), perceptual (LPIPS), and R1 gradient penalty
-- **Metrics:** FID, SSIM, PSNR
-
----
-
-## Features
-
-- Modular, object-oriented codebase with clear separation of concerns
-- Robust configuration management using Python dataclasses and environment variables
-- Automatic dataset download and preparation from Hugging Face Hub
-- Full experiment tracking and visualization with W&B
-- Checkpointing and model sharing via Hugging Face Hub
-- Production-ready CLI for training, evaluation, and inference
 
 ---
 
@@ -195,19 +236,5 @@ python main.py --mode inference --checkpoint_dir checkpoints/latest --output_pat
 All metrics are logged to W&B and printed at the end of each evaluation.
 
 ---
-
-## Model Checkpoints & Sharing
-
-- Model checkpoints are saved during training and can be uploaded to the Hugging Face Hub for sharing and reproducibility.
-- See the `upload_checkpoints_to_hf` utility in the codebase for details.
-
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request for improvements, bug fixes, or new features. For major changes, please discuss them in an issue first.
-
----
-
-## License
-
-This project is licensed under the MIT License. 
+# Final Remarks
+This repository represents a compact but extensible solution for conditional face synthesis under tight computational and data constraints. While the current implementation is limited by dataset scale and training duration, it establishes a strong foundation for future experimentation. With additional compute, higher-quality data, and further architectural exploration, this pipeline can be scaled to generate high-fidelity, identity-consistent face images for a variety of real-world applications.
